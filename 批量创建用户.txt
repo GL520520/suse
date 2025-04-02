@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# 批量创建用户脚本
+# 使用方法：sudo ./create_users.sh
+
+# 定义用户列表文件
+USER_FILE="user_list.txt"
+
+# 检查用户列表文件是否存在
+if [ ! -f "$USER_FILE" ]; then
+    echo "错误：用户列表文件 $USER_FILE 不存在"
+    exit 1
+fi
+
+# 逐行读取用户列表
+while IFS= read -r username; do
+    # 去除首尾空白字符
+    username_clean=$(echo "$username" | xargs)
+    
+    # 跳过空行和注释行
+    if [ -z "$username_clean" ] || [[ "$username_clean" == \#* ]]; then
+        continue
+    fi
+
+    # 检查用户是否存在
+    if id "$username_clean" &>/dev/null; then
+        continue  # 用户存在则跳过
+    else
+        # 创建用户并设置基础配置
+        if useradd -m -s /bin/bash "$username_clean" &>/dev/null; then
+            echo "用户 $username_clean 创建成功！"
+        else
+            echo "错误：无法创建用户 $username_clean" >&2
+        fi
+    fi
+done < "$USER_FILE"
+
+echo "用户创建任务完成"
